@@ -2,6 +2,10 @@
 
 ## 함수와 변수
 
+
+
+
+
 **함수를 선언할 때 fun 키워드 사용 **(꼭 클래스 안에 함수를 넣을 필요가 없음)
 
 **파라미터 이름 뒤에 그 파라미터의 타입을 씀** (변수 선언도 마찬가지)
@@ -119,7 +123,23 @@ answer = "no answer" // 오류발생
 
 
 
+## 문자열 템플릿
 
+```kotlin
+fun main(args: Array<String>){
+    val name = if(args.size > 0) args[0] else "Kotlin"
+    println("Hello, $name!") // "Bob"을 인자로 넘기면 "Hello, Bob!" 을, 아무 인자도 없으면 "Hello, World!" 출력 
+    
+    //복잡한 식도 중괄호로 둘러싸서 사용할 수 있다
+    println("Hello, ${args[0]}!")
+}
+//자바의 문자열 접합 연산 기능과 동일하다
+println("Hello, " + name + "!");
+
+
+```
+
+변수를 문자열 안에 사용할 수 있다. 문자열 리터럴의 필요한 곳에 변수를 넣고 변수 앞에 $를 추가해야 한다.
 
 
 
