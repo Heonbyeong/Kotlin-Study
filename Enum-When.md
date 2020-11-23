@@ -208,3 +208,68 @@ println(eval(Sum(Sum(Num(1), Num(2)), Num(4))))
 val n == e as Num
 ```
 
+
+
+## 리팩토링: if를 when으로 변경
+
+코틀린에서 if가 값을 만들어내기 때문에 3항 연산자가 없다.
+
+
+
+```kotlin
+// if 중첩
+fun eval(e: Expr): Int = if(e is Sum) {
+    e.value
+}else if(e is Sum) {
+    eval(e.right) + eval(e.left)
+}else {
+    throw IllegalArgumentException("Unknown  expression")
+}
+
+//실행
+println(eval(Sum(Num(1), Num(2))))
+> 3
+
+// if 중첩 대신 when 사용
+fun eval(e: Expr) : Int = when(e){
+    is Num ->
+    	e.value
+    is Sum ->
+    	eval(e.right) + eval(e.left)
+    else ->
+    	throw IllegalArgumentException("Unknown expression")
+}
+```
+
+
+
+## if와 when의 분기에서 블록 사용
+
+if, when 모두 분기에 블록을 사용할 수 있다. (블록의 마지막 문장이 블록의 전체의 결과가 된다.)
+
+```kotlin
+fun evalWithLogging(e: Expr): Int = when(e) {
+    is Num -> {
+        println("num: $(e.value)")
+        e.value
+    }
+    is Sum -> {
+        val left = evalWithLogging(e.left)
+        val right = evalWithLogging(e.right)
+        println("sum: $left + $right")
+        left + right
+    }
+    else -> throw IllegalArgumentException("Unknown expression")
+}
+
+//실행 
+println(evalWithLogging(Sum(Sum(Num(1), Num(4)))))
+>num: 1
+>num: 2
+>sum: 1 + 2
+>num: 4
+>sum: 3 + 4
+>7
+```
+
+**블록이 본문인 함수에서는 내부에 return 문이 반드시 있어야 한다.**
