@@ -72,3 +72,122 @@ println(joinToString(list, "; ","(", ")"))
 ```
 
 
+
+## 이름 붙인 인자
+
+```kotlin
+joinToString(collection, " ", " ", ".")
+```
+
+인자로 전달한 문자열이 어떤 역할을 하는지 알기 어렵다.
+
+
+
+```kotlin
+//위 코드의 가독성을 해결한 코드
+joinTOString(collection, separator = " ", prefix = " ", postfix = ".")
+```
+
+코틀린으로 작성한 함수를 호출할 때는 함수에 전달하는 인자 중 일부(전체)의 이름을 명시할 수 있다.
+
+
+
+## 디폴트 파라미터 값
+
+자바에서는 일부 클래스에서 오버로딩한 메소드가 너무 많아지고, 어떤 함수가 불릴지 모호한 문제가 있다.
+
+코틀린에서는 함수 선언에서 **파라미터의 디폴트 값을** 지정할 수 있으므로 위와 같은 문제를 피할 수 있다.
+
+```kotlin
+fun<T>joinToString{
+    collection: Collection<T>,
+    separator: String = ", ",
+    prefix: String = "",
+    postfix: String = ""
+    //디폴트 값이 지정된 파라미터
+}: String
+//함수를 호출할 때 모든 인자를 쓸 수도, 일부를 생략할 수도 있다.
+
+//실행
+joinToString(list, ", ", "", "")
+> 1, 2, 3
+joinToString(list)
+> 1, 2, 3
+joinToString(list, "; ")
+> 1; 2; 3
+```
+
+
+
+이름 붙은 인자를 사용하는 경우, **지정하고 싶은 인자를 이름을 붙여 순서와 관계없이 지정**할 수 있다.
+
+```kotlin
+joinToString(list, postfix = ";", prefix = "# ")
+> # 1, 2, 3;
+```
+
+
+
+## 정적인 유틸리티 클래스 없애기:  최상위 함수와 프로퍼티
+
+다양한 정적 메소드를 모아두는 역할만 담당하고, 특별한 상태나 인스턴스 메소드는 없는 클래스가 생겨날 수 있다.
+
+코틀린에선 이런 무의미한 클래스가 필요 없다. >> 함수를 직접 소스 파일의 최상위 수준, 모든 클래스의 밖에 위치시키면 된다.
+
+```kotlin
+//joinToString() 함수를 최상위 함수로
+package strings
+fun joinToString(...): String { ... }
+```
+
+위 함수가 실행될 수 있는 이유는 컴파일할 때 새로운 클래스를 JVM이 정의해주기 때문이다.
+
+```kotlin
+//위 코드를 컴파일 한 결과와 같은 클래스
+
+package strings;
+public class JoinKt{
+    public static String joinToString(...) { ... }
+}
+
+//호출
+import strings.joinKt;
+...
+Joinkt.joinToString(list, ", ", "", "");
+```
+
+
+
+**최상위 프로퍼티**
+
+프로퍼티도 파일의 최상위에 놓을 수 있다.
+
+```kotlin
+val opCount = 0
+
+fun performOperation(){
+    opCount++
+    //...
+}
+fun re4portOperationCount(){
+    println("Operation performed $opCount times") //최상위 프로퍼티의 값을 읽는다.
+}
+
+//최상위 프로퍼티를 활용해 상수를 추가할 수 있다.
+val UNIX_LINE_SEPARATOR = "\n"
+```
+
+
+
+***최상위 프로퍼티도 접근자 메소드를 통해 노출되는데, 겉으론 상수처럼 보이지만 실제로 게터를 사용해야 한다면 자연스럽지 못하다. 더 자연스럽게 사용하기 위해 public static final 필드로 컴파일해야 한다.** << const 변경자를 추가하면 된다.
+
+```kotlin
+const val UNIX_LINE_SEPARATOR = "\n"
+```
+
+
+
+## 메소드를 다른 클래스에 추가:  확장 함수와 확장 프로퍼티
+
+
+
