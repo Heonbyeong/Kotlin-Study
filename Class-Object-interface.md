@@ -151,3 +151,152 @@ abstract class Animated { //추상클래스이므로 인스턴스를 만들 수 
 **abstract / 반드시 오버라이드해야 함 / 추상 클래스의 멤버에만 이 변경자를 붙일 수 있다. (추상 멤버에는 구현이 있으면 안된다.)**
 
 **override / 상위 클래스나 상위 인스턴스의 멤버를 오버라이드하는 중 / 오버라이드하는 멤버는 기본적으로 열려있고, 하위 클래스의 오버라이드를 금지하려면 final 명시해야한다.**
+
+
+
+## 가시성 변경자: 기본적으로 공개
+
+**가시성 변경자는 코드 기반에 있는 선언에 대한 클래스 외부 접근을 제어한다.**
+
+(어떤 클래스의 구현에 대한 접근을 제한함으로써 그 클래스에 의존하는 외부 코드를 깨지 않고도 클래스 내부 구현을 변경할 수 있다.)
+
+
+
+**코틀린의 가시성 변경자 : **public / protected / private
+
+(기본 가시성은 아무 변경자도 없는 경우 public임)
+
+패키지 전용(package-private)은 코틀린에 없다.
+
+
+
+코틀린과 자바 가시성 규칙의 또 다른 차이 : 코틀린에서는 외부 클래스가 내부 클래스나 중첩된 클래스의 private 멤버에 접근할 수 없다.
+
+
+
+### 패키지 전용 가시성에 대한 대안
+
+코틀린에서는 대한으로 internal이라는 새로운 가시성 변경자를 도입했다.
+
+**internal : **모듈 내부에서만 볼 수 있음 
+
+(모듈 : 한 번에 한꺼번에 컴파일되는 코틀린 파일들 >> 인텔리J / 이클립스 / 그레이들 등의 프로젝트가 모듈이 될 수 있다.)
+
+
+
+**모듈 내부 가시성은 모듈의 구현에 대해 진정한 캡슐화를 제공한다는 것이 장점이다.**
+
+
+
+### 코틀린의 가시성 변경자
+
+**변경자 / 클래스 멤버 / 최상위 선언**
+
+public(기본 가시성) / 모든 곳에서 볼 수 있다. / 모든 곳에서 볼 수 있다.
+
+internal / 같은 모듈 안에서만 볼 수 있다. / 같은 모듈 안에서만 볼 수 있다.
+
+protected / 하위 클래스 안에서만 볼 수 있다. / (최상위 X)
+
+private / 같은 클래스 안에서만 볼 수 있다. / 같은 파일 안에서만 볼 수 있다.     
+
+
+
+## 내부 클래스와 중첩된 클래스 : 기본적으로 중첩 클래스
+
+코틀린의 중첩 클래스는 명시적으로 요청하지 않는 이상 바깥 클래스 인스턴스에 대한 접근 권한이 없다.
+
+```kotlin
+//직렬화할 수 있는 상태가 있는 뷰 선언
+interface State: Serializable
+interface View{
+    fun getCurrentState(): State
+    fun restoreState(state: State){}
+}
+```
+
+
+
+```kotlin
+//자바에서 내부 클래스 이용하여 View 구현하기
+public class Button implements View{
+    @Override
+    public State getCurrentState(){
+        return new ButtonState();
+    }
+    
+    @Override
+    public void restoreState(State state) { ... }
+    
+    public class ButtonState implements State { ... }
+}
+```
+
+자바에서는 다른 클래스 안에 정의한 클래스는 자동으로 내부 클래스가 된다.
+
+ButtonState 클래스는 바깥쪽 Button 클래스에 대한 참조를 묵시적으로 포함하기 때문에 ButtonState를 직렬화할 수 없다.
+
+**static 클래스로 선언하면 해결된다. (묵시적인 참조가 사라지기 때문)**
+
+
+
+***코틀린 중첩 클래스에 아무런 변경자가 붙지 않으면 자바 static 중첩 클래스와 같다.**
+
+
+
+**클래스 B 안에 정의된 클래스 A / 자바에서 / 코틀린에서**
+
+중첩 클래스 / static class A / class A
+
+내부 클래스 / class A / inner class A
+
+
+
+### 코틀린에서 바깥쪽 클래스의 인스턴스를 가리키는 참조를 표기하는 방법
+
+*this@Outer
+
+```kotlin
+class Outer{
+    inner class Inner{
+        fun getOuterReference(): Outer = this@Outer
+    }
+}
+```
+
+
+
+## 봉인된 클래스 : 클래스 계층 정의 시 계층 확장 제한
+
+```kotlin
+interface Expr
+class Num(val value: Int) : Expr
+class Sum(val left: Expr, val right: Expr) : Expr
+fun eval(e: Expr): Int = 
+	when(e){
+        is Num -> e.value
+        is Sum -> eval(e.right) + eval(e.left)
+        else->
+        	throw IllegalArgumentException("Unknown expression")
+    }
+```
+
+else 같은 디폴트 분기를 항상 추가하는 것은 불편하기도 하고, 버그가 발생할 수도 있다.
+
+**sealed 클래스를 사용하면 해결할 수 있다.** (sealed 클래스의 하위 클래스를 정의할 때는 반드시 상위 클래스 안에 중첩시켜야함)
+
+```kotlin
+//sealed 클래스로 식 표현하기
+sealed class Expr{
+    class Num(val value: Int) : Expr() // 기반 클래스의 모든 하위 클래스를 중첩 클래스로 나열한다.
+    class Sum(val left: Expr, val right: Expr) : Expr()
+}
+fun eval(e: Expr) : Int = 
+	when(e){ // when 식이 모든 하위 클래스를 검사하므로 else 분기는 필요 없다.
+        is Expr.Num -> e.value
+        is Expr.Sum -> eval(e.right) + eval(e.left)
+    }
+```
+
+**sealed로 표시된 클래스는 자동으로 open이다.**
+
