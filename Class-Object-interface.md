@@ -300,3 +300,156 @@ fun eval(e: Expr) : Int =
 
 **sealed로 표시된 클래스는 자동으로 open이다.**
 
+
+
+# 뻔하지 않은 생성자와 프로퍼티를 갖는 클래스 선언
+
+자바에서는 생성자를 하나 이상 선언할 수 있다. 
+
+코틀린도 비슷하지만 코틀린은 주생성자와 부생성자를 구분하고, 초기화 블록을 통해 초기화 로직을 추가할 수 있다.
+
+**주생성자? - 클래스를 초기화할 때 주로 사용하는 간략한 생성자, 본문 밖에서 정의**
+
+**부생성자? - 클래스 본문 안에서 정의**
+
+
+
+## 클래스 초기화 : 주 생성자와 초기화 블록
+
+**class User(val nickname:String)**
+
+이렇게 클래스 이름 뒤에 오는 괄호로 둘러싸인 코드를 주 생성자 라고 부른다.
+
+주 생성자는 생성자 파라미터를 지정하고 그 생성자 파라미터에 의해 초기화되는 프로퍼티를 정의하는 두 가지 목적에 쓰인다.
+
+
+
+```kotlin
+class User constructor(_nickname: String){ // 파라미터가 하나만 있는 주 생성자
+    val nickname: String
+    init{ // 초기화 블록
+        nickname = _nickname // 객체가 만들어질 때 실행될 초기화 코드가 들어간다.
+    }
+}
+```
+
+constructor : 주 생성자 / 부 생성자 정의를 시작할 때 사용 (주 생성자 앞에 별다른 애노테이션, 가시성 변경자가 없다면 생략가능)
+
+init : 초기화 블록을 시작
+
+**초기화 블록은 주 생성자와 함께 사용되고, 주 생성자는 제한적이기(별도의 코드 포함 X) 때문에 초기화 블록이 필요하다.**
+
+
+
+```kotlin
+class User(_nickname: String){ // 파라미터가 한 개인 주 생성자
+    val nickname = _nickname // 프로퍼티를 주 생성자의 파라미터로 초기화
+}
+```
+
+nickname을 초기화 하는 코드를 프로퍼티 선언에 포함시킬 수 있어서 초기화 블록이 필요 없다.
+
+
+
+**주 생성자의 파라미터로 프로퍼티를 초기화한다면 그 주 생성자 파라미터 이름 앞에 val을 추가하여 간략히 쓸 수 있다.**
+
+```kotlin
+class User(val nickname: String) // val은 이 파라미터에 상응하는 프로퍼티가 생성된다는 뜻
+```
+
+
+
+```kotlin
+//생성자 파리미터에도 디폴트 값을 정의할 수 있다.
+class User(val nickname: String, val isSubscribed: Boolean = true) // 디폴트 값 제공
+
+//클래스의 인스턴스를 만들려면 new 키워드 없이 생성자를 직접 호출하기
+val hyun = User("현석")
+println(hyun.isSubscribed) //isSubscribed에는 디폴트 값이 사용
+> true
+
+val gye = User("계영", false) 
+println(gye.isSubscribed)
+> false
+
+val hey = User("혜영", isSubscribed = false)
+> false
+
+```
+
+
+
+기반 클래스를 초기화 하려면 기반 클래스 이름 뒤에 괄호를 치고 생성자 인자를 넘긴다.
+
+```kotlin
+// 클래스에 기반 클래스가 있을 때 기반 클래스 초기화
+open class User(val nickname: String) { ... }
+class TwitterUser(nickname: String) : User(nickname) { ... }
+
+// 디폴트 생성자
+open class Button
+
+// 클래스 상속시 생성자 호출
+class RadioButton: Button()
+```
+
+Button의 생성자는 아무 인자도 받지 않지만, 이 클래스를 상속한 하위 클래스는 반드시 Button 클래스의 생성자를 호출해야 한다.
+
+*기반 클래스 뒤에는 괄호가 있고, 인터페이스 뒤에는 괄호가 없다. (구분법)
+
+
+
+어떤 클래스를 외부에서 인스턴스화를 막고 싶다면 모든 생성자를 private으로 만든다.
+
+```kotlin
+class Secretive private constructor() {} //이 클래스의 주 생성자는 비공개다.
+```
+
+
+
+## 부 생성자:  상위 클래스를 다른 방식으로 초기화
+
+코틀린은 생성자가 여럿 있는 경우가 자바보다 훨씬 적다.
+
+
+
+생성자가 여럿 필요한 경우가 있는데, 프레임워크 클래스를 확장해야 하는데, 여러 가지 방법으로 인스턴스를 초기화할 수 있게 다양한 생성자를 지원해야 하는 경우이다.
+
+```kotlin
+open class View{
+    constructor(ctx: Context){ //부 생성자
+        //코드
+    }
+    constructor(ctx: Context, attr: AttributeSet){ //부 생성자
+        //코드
+    }
+}
+
+//위 클래스를 확장하면서 똑같이 부 생성자를 정의할 수 있다.
+class MyButton : View {
+    constructor(ctx: Context)
+    	: super(ctx){ // 상위 클래스 생성자 호출
+            //코드
+        }
+    constructor(ctx: Context, attr: AttributeSet)
+    	: super(ctx, attr) { // 상위 클래스 생성자 호출
+            //코드
+        }
+}
+```
+
+ 
+
+자바와 마찬가지로 생성자에서 this()를 통해 클래스 자신의 다른 생성자를 호출할 수 있다.
+
+```kotlin
+class MyButton : View{
+    constructor(ctx: Context): this(ctx, MY_STYLE) { // 파라미터의 디폴트 값을 넘겨 같은 클래스의 다른 생성자에게 생성 위임
+        //코드
+    }
+    constructor(ctx: Context, attr: AttributeSet) : super(ctx, attr) { // super() 호출
+        //코드
+    }
+}
+```
+
