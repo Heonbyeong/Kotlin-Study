@@ -453,3 +453,115 @@ class MyButton : View{
 }
 ```
 
+클래스에 주 생성자가 없다면 **반드시 모든 부 생성자는 상위 클래스를 초기화 하거나 다른 생성자에게 생성을 위임해야 한다.**
+
+
+
+## 인터페이스에 선언된 프로퍼티 구현
+
+코틀린은 인터페이스에 추상 프로퍼티 선언을 넣을 수 있다.
+
+```kotlin
+interface User{ // 이 인터페이스를 구현하는 클래스가 nickname의 값을 얻을 수 있는 방법을 제공해야 한다.
+    val nickname: String
+}
+```
+
+인터페이스는 아무 상태도 포함할 수 없기 때문에 상태를 저장해야 한다면 인터페이스를 구현하는 하위 클래스에서 상태 저장을 위한 프로퍼티 등을 만들어야 한다.
+
+
+
+```kotlin
+//인터페이스의 프로퍼티
+class PrivateUser(val email: String) : User //주 생성자에 있는 프로퍼티
+class SubscribingUser(val email: String) : User{
+    override val nickname: String
+    	get() = email.substringBefore('@') // 커스텀 게터
+}
+class FacebookUser(val accountId: Int): User {
+    override val nickname = getFacebookName(accountId) //프로퍼티 초기화 식
+}
+
+//실행
+println(PrivateUser("test@kotlinlang.org").nickname)
+> test@kotlinlang.org
+
+println(SubscribingUser("test@kotlinlang.org").nickname)
+> test
+```
+
+SubscribingUser는 커스텀 게터로 nickname 프로퍼티를 설정하고, 뒷받침하는 필드에 값을 저장하지 않고 매번 이메일 주소에서 별명을 계산해 반환한다.
+
+
+
+인터페이스에는 게터와 세터가 있는 프로퍼티도 선언할 수 있다. (그런 게터와 세터는 뒷받침하는 필드를 참조할 수 없다)
+
+```kotlin
+interface User {
+    val email: String
+    val nickname: String
+    	get() = email.substringBefore('@') // 뒷받침하는 필드가 없기 때문에 매번 결과를 계산해 반환한다.
+}
+```
+
+
+
+## 게터와 세터에서 뒷받침하는 필드에 접근
+
+ 값을 저장하는 동시에 로직을 실행하려면 접근자 안에서 프로퍼티를 뒷받침하는 필드에 접근할 수 있어야 한다.
+
+**뒷받침 하는 필드 (Backing field) ? - **프로퍼티의 값을 내부적으로 다루기 위해 멤버변수가 선언됐어야 하는데, Backing field는 이 멤버변수를 대체한다.
+
+- 자동 생성 된다.
+- 자동 생성된 필드는 field 키워드를 사용한다.
+- field는 프로퍼티에만 접근할 수 있다.
+
+```kotlin
+class User(val name: String) {
+    val address: String = "unspecified"
+    	set(value: String){
+            println("""
+            	Address was changed for $name: "$field" -> "$value".""".trimIndent()) //뒷받침하는 필드 값 읽기
+            field = value // 뒷받침하는 필드 값 변경하기
+        }
+}
+
+//실행
+
+val user = User("Alice")
+user.address = "Elsenheimerstrasse 47, 80687 Muenchen"
+
+> Address was changed for Alice: "unspecified" -> "Elsenheimerstrasse 47, 80687 Muenchen".
+```
+
+코틀린에서 프로퍼티의 값을 바꿀 때는 user.address = "new value" 처럼 필드 설정 구문을 사용한다. (내부적으로 address의 세터 오출)
+
+
+
+컴파일러는 게터나 세터에서 field를 사용하는 프로퍼티에 대해 뒷받침하는 필드를 생성해준다.
+
+**field를 사용하지 않는 커스텀 접근자 구현을 정의한다면 뒷받침하는 필드는 존재하지 않는다.**
+
+
+
+## 접근자의 가시성 변경
+
+접근자와 프로퍼티의 가시성은 기본적으로 같지만 접근자 앞에 가시성 변경자를 추가해서 접근자의 가시성을 변경할 수 있다.
+
+```kotlin
+//비공개 세터가 있는 프로퍼티 선언
+class LengthCounter {
+    var counter: Int = 0
+    	private set //이 클래스 밖에서 프로퍼티의 값을 바꿀 수 없다.
+    fun addWord(word: String){
+        counter += word.length // 추가된 모든 단어의 길이를 합산
+    }
+}
+
+//위 클래스를 사용하는 방법
+val lengthCounter = LengthCounter()
+lengthCounter.addWord("Hi!")
+println(lengthCounter.counter)
+> 3
+```
+
